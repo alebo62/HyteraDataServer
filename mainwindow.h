@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "radio.h"
+#include <QVector>
+#include <QUdpSocket>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -18,7 +21,25 @@ public:
 private slots:
     void on_pushButton_clicked();
 
+    void on_pbAdd_clicked();
+
+    void packet_arrived();
+
+    void on_pbControlExit_clicked();
+
+    void on_pbControlAdd_2_clicked();
+
+    void on_pbControlAdd_clicked();
+
+    void on_pbControlDel_clicked();
+
 private:
     Ui::MainWindow *ui;
+    Radio *radio;
+    QVector <Radio *> v_rad;
+    quint32 radCnt;
+    QVector<quint32> v_radNums;
+    QUdpSocket* udp;
+
 };
 #endif // MAINWINDOW_H
