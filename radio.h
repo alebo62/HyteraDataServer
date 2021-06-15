@@ -21,12 +21,13 @@ public:
     void flush_alarm(void);
     void setWidth();
     ~Radio();
+    QString m_name;
     quint32 m_radioNum;
     quint32 m_regNum;
     quint32 m_timerRegValue;
     QDateTime m_regTime;
     QDateTime m_alarmTime;
-
+    QString toString();
 
 private:
     Ui::Radio *ui;
@@ -34,7 +35,7 @@ private:
     QPixmap iconUp2, iconDwn1, iconDwn2;
     QLabel *lblIcon;
     QTimer  timReg, timRegView, timAlrm;
-    QString m_name;
+
 //    quint32 m_radioNum;
 //    quint32 m_regNum;
 //    quint32 m_timerRegValue;

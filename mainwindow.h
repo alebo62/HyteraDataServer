@@ -5,7 +5,7 @@
 #include "radio.h"
 #include <QVector>
 #include <QUdpSocket>
-
+#include <QFile>
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -27,7 +27,7 @@ private slots:
 
     void on_pbControlExit_clicked();
 
-    void on_pbControlAdd_2_clicked();
+    //void on_pbControlAdd_2_clicked();
 
     void on_pbControlAdd_clicked();
 
@@ -40,6 +40,7 @@ private:
     quint32 radCnt;
     QVector<quint32> v_radNums;
     QUdpSocket* udp;
+    QFile file;
 
 };
 #endif // MAINWINDOW_H

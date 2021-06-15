@@ -44,9 +44,15 @@ Radio::~Radio()
     delete ui;
 }
 
+QString Radio::toString()
+{
+    QString s = QString::number(m_radioNum) + "," + m_name + "," + QString::number(m_regNum);
+}
+
 void Radio::timRegSlot()
 {
-    if(ui->lblIcon->pixmap(Qt::ReturnByValue) == iconUp1)
+    QPixmap pixmapVal = ui->lblIcon->pixmap(Qt::ReturnByValue);
+    if(pixmapVal.toImage() ==  iconUp1.toImage())
         ui->lblIcon->setPixmap(iconUp2);
     else
         ui->lblIcon->setPixmap(iconUp1);
@@ -56,7 +62,7 @@ void Radio::timRegSlot()
 
 void Radio::timAlrmSlot()
 {
-    if(ui->lblIcon->pixmap(Qt::ReturnByValue) == iconDwn1)
+    if(ui->lblIcon->pixmap(Qt::ReturnByValue).toImage() == iconDwn1.toImage())
         ui->lblIcon->setPixmap(iconDwn2);
     else
         ui->lblIcon->setPixmap(iconDwn1);
