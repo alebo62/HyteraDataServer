@@ -46,7 +46,8 @@ Radio::~Radio()
 
 QString Radio::toString()
 {
-    QString s = QString::number(m_radioNum) + "," + m_name + "," + QString::number(m_regNum);
+    QString s = QString::number(m_radioNum) + "," + m_name + "," + QString::number(m_regNum) + "\r\n";
+    return s;
 }
 
 void Radio::timRegSlot()

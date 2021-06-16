@@ -6,6 +6,9 @@
 #include <QVector>
 #include <QUdpSocket>
 #include <QFile>
+#include <QLayout>
+#include <QtSql/QSqlDatabase>
+#include <QtSql/QSqlQuery>
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -33,6 +36,14 @@ private slots:
 
     void on_pbControlDel_clicked();
 
+    void on_pbRegistration_clicked();
+
+    void on_pbRegExit_clicked();
+
+    void on_pbReg_clicked();
+
+    void on_pbAlrm_clicked();
+
 private:
     Ui::MainWindow *ui;
     Radio *radio;
@@ -41,6 +52,10 @@ private:
     QVector<quint32> v_radNums;
     QUdpSocket* udp;
     QFile file;
-
+    QFile fileReg;
+    QFile fileAlrm;
+    void fill_table();
+    quint32 check_id(QVector<Radio*>, quint32);
+    void fill_shops(Radio*, quint32);
 };
 #endif // MAINWINDOW_H

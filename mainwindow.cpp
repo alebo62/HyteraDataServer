@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QLayout>
+
 #include <QMessageBox>
 
 extern QPixmap iconUp1;
@@ -29,7 +29,9 @@ MainWindow::MainWindow(QWidget *parent)
     udp->bind(QHostAddress("127.0.0.1"), 4004);
     connect(udp, SIGNAL(readyRead()), this , SLOT(packet_arrived()));
     ui->tableWidget->setHorizontalHeaderLabels(QStringList() << "" << "ИД радиостанции" << "Владелец");
+    ui->tableWidgetRegAlrm->setHorizontalHeaderLabels(QStringList() << "Дата" << "ИД радиост-ции" << "Владелец" << " Цех ");
     ui->widgetControl->setVisible(false);
+    ui->widgetRegistration->setVisible(false);
 
     file.setFileName("settings.txt");
     if(file.open(QIODevice::ReadOnly))
@@ -42,12 +44,56 @@ MainWindow::MainWindow(QWidget *parent)
             radio = new Radio(lba[0].toInt(), QString(lba[1]).trimmed());
             radio->m_regNum = lba[2].trimmed().toInt();
             v_rad.push_back(radio);
-
+            fill_shops(radio, radio->m_regNum);// заполним цеха станциями
         }
     }
     else
         qDebug() << "not file!!!";
-    qDebug() << v_rad.size();
+
+    fileReg.setFileName("settingsReg.txt");
+    if(!fileReg.open(QIODevice::ReadWrite))
+    {
+        qDebug() << "Не могу открыть файл settingsReg.txt";
+    }
+
+    fileAlrm.setFileName("settingsReg.txt");
+    if(!fileAlrm.open(QIODevice::ReadWrite))
+    {
+        qDebug() << "Не могу открыть файл settingsAlrm.txt";
+    }
+
+    QString path = "abonents";
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");//not dbConnection
+    db.setDatabaseName(path);
+    db.open();
+    QSqlQuery query;
+//    query.exec("CREATE TABLE abonents \
+//               (id      integer primary key, \
+//                radio_id integer, \
+//                name     varchar(30), \
+//                reg      integer)");
+
+               // query.exec("INSERT INTO  abonents  (id,  radio_id,  name,  reg) VALUES (1,111,'Borisov',2) ");
+               //query.exec("VALUES (1,111,'Borisov',2)");
+               // query.exec("INSERT INTO  abonents  (id,  radio_id,  name,  reg) VALUES (2,222,'Petrov',2)");
+               //query.exec("VALUES (2,222,'Petrov',2)");
+
+//               query.exec("SELECT * FROM abonents ");
+//            while(query.next())
+//    {
+//        radio = new Radio(query.value(1).toInt(), query.value(2).toString());
+//        radio->m_regNum = query.value(3).toInt();
+//        v_rad.push_back(radio);
+//        fill_shops(radio, radio->m_regNum);// заполним цеха станциями
+
+//    }
+    query.prepare("SELECT COUNT(*) FROM abonents");
+    query.exec();
+    int rows= 0;
+    if (query.next()) {
+        rows= query.value(0).toInt();
+    }
+    qDebug() << rows;
 
 }
 
@@ -63,101 +109,55 @@ void MainWindow::on_pushButton_clicked()
     //for(int i = 0; i < v_rad.size(); i++)
     //    v_rad.at(i)->setWidth();
     // ui->widget->setVisible(false);
-
-    //    char arr[] = {0,0,0,1,1};
-    //    QByteArray data = QByteArray::fromRawData(arr, sizeof(arr));
-    //    udp->writeDatagram(data, QHostAddress("127.0.0.1"), 4004);
-    //    ui->widgetControl->setVisible(false);
-
     ui->widgetControl->setVisible(true);
-    quint32 rc = 1;// начальная строка
-    ui->tableWidget->setRowCount(v_rad.size()+1);// сколько всего строк будет видно
-    foreach(Radio* r, v_rad)
-    {
-        QTableWidgetItem *twi = new QTableWidgetItem(tr("%1").arg(rc));
-        ui->tableWidget->setItem(rc,0, twi);
-
-        QTableWidgetItem *twi1 = new QTableWidgetItem(QString::number(r->m_radioNum));
-        ui->tableWidget->setItem(rc,1, twi1);
-
-        QTableWidgetItem *twi2 = new QTableWidgetItem(r->m_name);
-        ui->tableWidget->setItem(rc,2, twi2);
-
-        rc++;
-    }
+    fill_table();
 }
 
 void MainWindow::packet_arrived()
 {
     quint32 len;
     QByteArray ba;
+    quint32 radio_num;
+    quint8 shop;
+
     ba.resize(static_cast<int>(udp->pendingDatagramSize()));
     len = ba.size();
     udp->readDatagram(ba.data(), len);
-    qDebug()<< ba;
+    radio_num = ba.at(3) + (ba.at(2)<<8) + (ba.at(1)<<16) + (ba.at(0)<<24);
+    quint32 index = check_id(v_rad, radio_num);
+    if(index >= 0)// радио в списке?
+    {
+        shop = ba.at(4) & 0x7F;
+        if(ba.at(4) & 0x80)
+        {
+
+        }
+        else
+        {
+            if(v_rad[index]->m_regNum != shop)// если регстрация в другом цеху
+            {
+                v_rad[index]->m_regNum = shop; // обновим рег-ю
+                fill_shops(v_rad.at(index), shop);// перенесем в новый цех
+                QByteArray ba_reg;
+                QDateTime dt = QDateTime::currentDateTime();
+                QString s = dt.toString("dd.MM.yyyy hh:mm:ss,") + v_rad[index]->toString();
+                fileReg.write(s.toUtf8());
+                //file.
+                qDebug() << s ;
+                //fileReg.write()
+            }
+        }
+    }
+    //   qDebug()<< radio_num;
 }
 
 void MainWindow::on_pbAdd_clicked()
 {
-    radio = new Radio(12345, "Борисов");
-    radCnt++;
-    v_rad.push_back(radio);
-    //ui->gridLayout_1->addWidget(radio);
-}
-
-
-
-void MainWindow::on_pbControlExit_clicked()
-{
+    char arr[] = {0,0,0,111,(char)0x01};
+    QByteArray data = QByteArray::fromRawData(arr, sizeof(arr));
+    udp->writeDatagram(data, QHostAddress("127.0.0.1"), 4004);
     ui->widgetControl->setVisible(false);
-    // заполняем таблицу данными из вектора
-
-
 }
 
-void MainWindow::on_pbControlAdd_clicked()
-{
-    // check!!!
-    bool check_number = true;
-    quint32 num = ui->leControlID->text().toInt();
-    foreach(Radio* r, v_rad)
-        if (r->m_radioNum == num )
-        {
-            check_number = false;
-            QMessageBox::information(this,"Информация","Такой ИД уже есть");
-        }
-    if(check_number)
-    {
-        radio = new Radio(num, ui->leControlName->text());
-        radio->m_regNum = 0;
-        v_rad.push_back(radio);
 
-        quint32 rc = ui->tableWidget->rowCount();
-        ui->tableWidget->setRowCount(rc+1);
 
-        QTableWidgetItem *twi = new QTableWidgetItem(tr("%1").arg(rc+1));
-        ui->tableWidget->setItem(rc,0, twi);
-        QTableWidgetItem *twi1 = new QTableWidgetItem(ui->leControlID->text());
-        ui->tableWidget->setItem(rc,1, twi1);
-        QTableWidgetItem *twi2 = new QTableWidgetItem(ui->leControlName->text());
-        ui->tableWidget->setItem(rc,2, twi2);
-    }
-
-}
-void MainWindow::on_pbControlDel_clicked()
-{
-    quint32 radId = (ui->tableWidget->item(ui->tableWidget->currentRow(),1))->text().toInt();
-    //    QTableWidgetItem *twi0 = ui->tableWidget->item(ui->tableWidget->currentRow(),0);
-    //    QTableWidgetItem *twi1 = ui->tableWidget->item(ui->tableWidget->currentRow(),1);
-    //    QTableWidgetItem *twi2 = ui->tableWidget->item(ui->tableWidget->currentRow(),2);
-    ui->tableWidget->removeRow(ui->tableWidget->currentRow());
-    //    delete twi0;
-    //    delete twi1;
-    //    delete twi2;
-    // стираем это радио из вектора
-    qDebug() << v_rad.size();
-    foreach(Radio* r, v_rad)
-        if (r->m_radioNum == radId )
-            v_rad.removeOne(r);
-    // qDebug() << v_rad.size();
-}
