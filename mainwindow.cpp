@@ -33,22 +33,22 @@ MainWindow::MainWindow(QWidget *parent)
     ui->widgetControl->setVisible(false);
     ui->widgetRegistration->setVisible(false);
 
-    file.setFileName("settings.txt");
-    if(file.open(QIODevice::ReadOnly))
-    {
-        QByteArray ba;
-        while(!file.atEnd())//заносим из файла все радио в вектор
-        {
-            ba = file.readLine();
-            QList<QByteArray> lba = ba.split(',');
-            radio = new Radio(lba[0].toInt(), QString(lba[1]).trimmed());
-            radio->m_regNum = lba[2].trimmed().toInt();
-            v_rad.push_back(radio);
-            fill_shops(radio, radio->m_regNum);// заполним цеха станциями
-        }
-    }
-    else
-        qDebug() << "not file!!!";
+//    file.setFileName("settings.txt");
+//    if(file.open(QIODevice::ReadOnly))
+//    {
+//        QByteArray ba;
+//        while(!file.atEnd())//заносим из файла все радио в вектор
+//        {
+//            ba = file.readLine();
+//            QList<QByteArray> lba = ba.split(',');
+//            radio = new Radio(lba[0].toInt(), QString(lba[1]).trimmed());
+//            radio->m_regNum = lba[2].trimmed().toInt();
+//            v_rad.push_back(radio);
+//            fill_shops(radio, radio->m_regNum);// заполним цеха станциями
+//        }
+//    }
+//    else
+//        qDebug() << "not file!!!";
 
     fileReg.setFileName("settingsReg.txt");
     if(!fileReg.open(QIODevice::ReadWrite))
@@ -63,35 +63,31 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     QString path = "abonents";
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");//not dbConnection
-    db.setDatabaseName(path);
-    db.open();
-    QSqlQuery query;
-//    query.exec("CREATE TABLE abonents \
-//               (id      integer primary key, \
-//                radio_id integer, \
-//                name     varchar(30), \
-//                reg      integer)");
+    db = new QSqlDatabase(QSqlDatabase::addDatabase("QSQLITE"));
+    db->setDatabaseName(path);
+    qDebug() << db->open();
+    query = new QSqlQuery();
+    query->exec("CREATE TABLE abonents \
+               (id      integer primary key, \
+                radio_id integer, \
+                name     varchar(30), \
+                reg      integer)");
 
-               // query.exec("INSERT INTO  abonents  (id,  radio_id,  name,  reg) VALUES (1,111,'Borisov',2) ");
-               //query.exec("VALUES (1,111,'Borisov',2)");
-               // query.exec("INSERT INTO  abonents  (id,  radio_id,  name,  reg) VALUES (2,222,'Petrov',2)");
-               //query.exec("VALUES (2,222,'Petrov',2)");
+    // из БД заполним вектор
+    query->exec("SELECT * FROM abonents ");
+    while(query->next())
+    {
+        radio = new Radio(query->value(1).toInt(), query->value(2).toString());
+        radio->m_regNum = query->value(3).toInt();
+        v_rad.push_back(radio);
+        fill_shops(radio, radio->m_regNum);// заполним цеха станциями
+    }
 
-//               query.exec("SELECT * FROM abonents ");
-//            while(query.next())
-//    {
-//        radio = new Radio(query.value(1).toInt(), query.value(2).toString());
-//        radio->m_regNum = query.value(3).toInt();
-//        v_rad.push_back(radio);
-//        fill_shops(radio, radio->m_regNum);// заполним цеха станциями
-
-//    }
-    query.prepare("SELECT COUNT(*) FROM abonents");
-    query.exec();
+    query->prepare("SELECT COUNT(*) FROM abonents");
+    query->exec();
     int rows= 0;
-    if (query.next()) {
-        rows= query.value(0).toInt();
+    if (query->next()) {
+        rows= query->value(0).toInt();
     }
     qDebug() << rows;
 
@@ -102,16 +98,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
-void MainWindow::on_pushButton_clicked()
-{
-    //rad->flush_registration();
-    //for(int i = 0; i < v_rad.size(); i++)
-    //    v_rad.at(i)->setWidth();
-    // ui->widget->setVisible(false);
-    ui->widgetControl->setVisible(true);
-    fill_table();
-}
 
 void MainWindow::packet_arrived()
 {
@@ -136,15 +122,16 @@ void MainWindow::packet_arrived()
         {
             if(v_rad[index]->m_regNum != shop)// если регстрация в другом цеху
             {
-                v_rad[index]->m_regNum = shop; // обновим рег-ю
-                fill_shops(v_rad.at(index), shop);// перенесем в новый цех
+                v_rad[index]->m_regNum = shop; // обновим рег-ю в векторе
+                fill_shops(v_rad.at(index), shop);// перенесем станцию в новый цех
                 QByteArray ba_reg;
+
                 QDateTime dt = QDateTime::currentDateTime();
                 QString s = dt.toString("dd.MM.yyyy hh:mm:ss,") + v_rad[index]->toString();
                 fileReg.write(s.toUtf8());
-                //file.
-                qDebug() << s ;
-                //fileReg.write()
+               // перепишем регистрацию в БД
+                QString s1 = QString("INSERT INTO  abonents  (reg) VALUES %1 WHERE radio_id = %2").arg(shop).arg(radio_num);
+                query->exec(s1);//"INSERT INTO  abonents  (id,  radio_id,  name,  reg) VALUES (1,111,'Borisov',2) ");
             }
         }
     }

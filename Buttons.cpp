@@ -3,30 +3,52 @@
 #include <QLayout>
 #include <QMessageBox>
 
+/*
+ * Работа с базой абонентов
+ */
 
+// Список абонентов, добавление , удаление
+void MainWindow::on_pushButton_clicked()
+{
+    ui->widgetControl->setVisible(true);
+    fill_table();
+}
+// Выход из списка абонентов
 void MainWindow::on_pbControlExit_clicked()
 {
     ui->widgetControl->setVisible(false);
 }
 
-// Добавляем клиента в вектор и в таблицу
+// Добавляем клиента в вектор и в таблицу и БД
 void MainWindow::on_pbControlAdd_clicked()
 {
-    // check!!!
+
+    // check!!! что это число
     bool check_number = true;
     quint32 num = ui->leControlID->text().toInt();
+
     foreach(Radio* r, v_rad)
+    {
         if (r->m_radioNum == num )
         {
             check_number = false;
             QMessageBox::information(this,"Информация","Такой ИД уже есть");
         }
+    }
+
     if(check_number)
     {
         radio = new Radio(num, ui->leControlName->text());
         radio->m_regNum = 0;
+        // запись в вектор
         v_rad.push_back(radio);
 
+        // записываем в базу данных
+        QString s = QString("INSERT INTO  abonents  (id,  radio_id,  name,  reg) VALUES \
+        (%1, %2,'%3', %4) ").arg(v_rad.size()).arg(num).arg(ui->leControlName->text()).arg(0);
+        query->exec(s);
+
+        // добавляем в таблицу
         quint32 rc = ui->tableWidget->rowCount();
         ui->tableWidget->setRowCount(rc+1);
 
@@ -42,26 +64,25 @@ void MainWindow::on_pbControlAdd_clicked()
 
 void MainWindow::on_pbControlDel_clicked()
 {
-    // Удаляем выделенную строку
+    // Удаляем выделенную строку из таблицы
     quint32 radId = (ui->tableWidget->item(ui->tableWidget->currentRow(),1))->text().toInt();
     ui->tableWidget->removeRow(ui->tableWidget->currentRow());
+
+    // Удаляем абонента из БД
+    QString s = QString("DELETE FROM  abonents  WHERE radio_id = %1 ").arg(radId);
+    query->exec(s);//"INSERT INTO  abonents  (id,  radio_id,  name,  reg) VALUES (1,111,'Borisov',2) ");
+
 
     // стираем это радио из вектора
     foreach(Radio* r, v_rad)
         if (r->m_radioNum == radId )
-            v_rad.removeOne(r);
+              v_rad.removeOne(r);
 
-    // Стираем таблицу, запивываем изменения в файл
+    // Стираем таблицу, обновляем ее
     ui->tableWidget->clear();
     fill_table();
-    file.close();
-    file.open(QIODevice::WriteOnly);
-    foreach(Radio* r, v_rad)
-        file.write(r->toString().toUtf8());
-    file.flush();
-    file.close();
-    file.open(QIODevice::ReadOnly);
 }
+
 
 void MainWindow::on_pbRegistration_clicked()
 {

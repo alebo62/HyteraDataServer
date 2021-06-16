@@ -57,5 +57,7 @@ private:
     void fill_table();
     quint32 check_id(QVector<Radio*>, quint32);
     void fill_shops(Radio*, quint32);
+    QSqlQuery *query;
+    QSqlDatabase *db;
 };
 #endif // MAINWINDOW_H
