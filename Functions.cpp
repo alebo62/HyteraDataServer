@@ -86,100 +86,135 @@ void MainWindow::setFieldsValidation()
 void MainWindow::fill_program_packet(QByteArray& ba)
 {
     qint16 data = 0;
+    qint16 index = 0;
+
+    ba.append(0x50).append(0x52).append(0x47);// "PRG" в начале!
 
     if(ui->checkBoxIndoor->isChecked())
         data = 0x0001;
     else
         data = 0x0000;
+    index = 0x000F;
+    ba.append((char)(index >> 8)).append((char)(index & 0xFF));
     ba.append((char)(data >> 8)).append((char)(data & 0xFF));
 
     if(ui->lineEditCs->text() != "")
     {
         data = ui->lineEditCs->text().toInt();
+        index = 0x0000;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditChPD->text() != "")
     {
         data = ui->lineEditChPD->text().toInt();
+        index = 0x0001;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditCh2_4->text() != "")
     {
         data = ui->lineEditCh2_4->text().toInt();
+        index = 0x000D;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditTimerMD->text() != "")
     {
         data = ui->lineEditTimerMD->text().toInt();
+        index = 0x0002;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditTimerReg->text() != "")
     {
         data = ui->lineEditTimerReg->text().toInt();
+        index = 0x000E;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditZ1max->text() != "")
     {
         data = ui->lineEditZ1max->text().toInt();
+        index = 0x0005;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditZ1min->text() != "")
     {
         data = ui->lineEditZ1min->text().toInt();
+        index = 0x0006;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditZ2max->text() != "")
     {
         data = ui->lineEditZ2max->text().toInt();
+        index = 0x0007;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditZ2min->text() != "")
     {
         data = ui->lineEditZ2min->text().toInt();
+        index = 0x0008;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditY1max->text() != "")
     {
         data = ui->lineEditY1max->text().toInt();
+        index = 0x0009;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditY1min->text() != "")
     {
         data = ui->lineEditY1min->text().toInt();
+        index = 0x000A;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditY2max->text() != "")
     {
         data = ui->lineEditY2max->text().toInt();
+        index = 0x000B;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditY2min->text() != "")
     {
         data = ui->lineEditY2min->text().toInt();
+        index = 0x000C;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditMaxCnt->text() != "")
     {
         data = ui->lineEditMaxCnt->text().toInt();
+        index = 0x0003;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 
     if(ui->lineEditPorogCnt->text() != "")
     {
         data = ui->lineEditPorogCnt->text().toInt();
+        index = 0x0004;
+        ba.append((char)(index >> 8)).append((char)(index & 0xFF));
         ba.append((char)(data >> 8)).append((char)(data & 0xFF));
     }
 }
