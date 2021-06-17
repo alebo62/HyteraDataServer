@@ -28,36 +28,24 @@ MainWindow::MainWindow(QWidget *parent)
     udp = new QUdpSocket();
     udp->bind(QHostAddress("127.0.0.1"), 4004);
     connect(udp, SIGNAL(readyRead()), this , SLOT(packet_arrived()));
+
     ui->tableWidget->setHorizontalHeaderLabels(QStringList() << "" << "ИД радиостанции" << "Владелец");
     ui->tableWidgetRegAlrm->setHorizontalHeaderLabels(QStringList() << "Дата" << "ИД радиост-ции" << "Владелец" << " Цех ");
+
     ui->widgetControl->setVisible(false);
     ui->widgetRegistration->setVisible(false);
 
-//    file.setFileName("settings.txt");
-//    if(file.open(QIODevice::ReadOnly))
-//    {
-//        QByteArray ba;
-//        while(!file.atEnd())//заносим из файла все радио в вектор
-//        {
-//            ba = file.readLine();
-//            QList<QByteArray> lba = ba.split(',');
-//            radio = new Radio(lba[0].toInt(), QString(lba[1]).trimmed());
-//            radio->m_regNum = lba[2].trimmed().toInt();
-//            v_rad.push_back(radio);
-//            fill_shops(radio, radio->m_regNum);// заполним цеха станциями
-//        }
-//    }
-//    else
-//        qDebug() << "not file!!!";
+    ui->widgetProg->setVisible(false);
+    setFieldsValidation();
 
     fileReg.setFileName("settingsReg.txt");
-    if(!fileReg.open(QIODevice::ReadWrite))
+    if(!fileReg.open(QIODevice::Append))
     {
         qDebug() << "Не могу открыть файл settingsReg.txt";
     }
 
     fileAlrm.setFileName("settingsReg.txt");
-    if(!fileAlrm.open(QIODevice::ReadWrite))
+    if(!fileAlrm.open(QIODevice::Append))
     {
         qDebug() << "Не могу открыть файл settingsAlrm.txt";
     }
@@ -86,11 +74,13 @@ MainWindow::MainWindow(QWidget *parent)
     query->prepare("SELECT COUNT(*) FROM abonents");
     query->exec();
     int rows= 0;
-    if (query->next()) {
+    if (query->next())
+    {
         rows= query->value(0).toInt();
     }
     qDebug() << rows;
-
+    // растяним первый столбец
+    ui->tableWidgetRegAlrm->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
 }
 
 MainWindow::~MainWindow()
@@ -98,7 +88,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
+// Udp пакет пришел
 void MainWindow::packet_arrived()
 {
     quint32 len;
@@ -116,7 +106,20 @@ void MainWindow::packet_arrived()
         shop = ba.at(4) & 0x7F;
         if(ba.at(4) & 0x80)
         {
+            if(v_rad[index]->m_regNum != shop)// если регстрация в другом цеху
+            {
+                v_rad[index]->m_regNum = shop; // обновим рег-ю в векторе
+                fill_shops(v_rad.at(index), shop);// перенесем станцию в новый цех
+               // перепишем регистрацию в БД
+                QString s1 = QString("UPDATE  abonents  SET reg = %1 WHERE radio_id = %2").arg(shop).arg(radio_num);
+                query->exec(s1);//"INSERT INTO  abonents  (id,  radio_id,  name,  reg) VALUES (1,111,'Borisov',2) ");
+            }
+            // надо включить другую иконку и мигать!!!!!!
+            QByteArray ba_alrm;
 
+            QDateTime dt = QDateTime::currentDateTime();
+            QString s = dt.toString("dd.MM.yyyy hh:mm:ss,") + v_rad[index]->toString();
+            fileAlrm.write(s.toUtf8());
         }
         else
         {
@@ -130,21 +133,23 @@ void MainWindow::packet_arrived()
                 QString s = dt.toString("dd.MM.yyyy hh:mm:ss,") + v_rad[index]->toString();
                 fileReg.write(s.toUtf8());
                // перепишем регистрацию в БД
-                QString s1 = QString("INSERT INTO  abonents  (reg) VALUES %1 WHERE radio_id = %2").arg(shop).arg(radio_num);
+                QString s1 = QString("UPDATE  abonents  SET reg = %1 WHERE radio_id = %2 ").arg(shop).arg(radio_num);
                 query->exec(s1);//"INSERT INTO  abonents  (id,  radio_id,  name,  reg) VALUES (1,111,'Borisov',2) ");
+                qDebug() << s1;
+                //ui->tab_2->show();
+                // надо помигать и сделать этот цех активным!!!
             }
         }
     }
     //   qDebug()<< radio_num;
 }
 
+// посылка по Udp
 void MainWindow::on_pbAdd_clicked()
 {
-    char arr[] = {0,0,0,111,(char)0x01};
+    char arr[] = {0,0,0,111,(char)0x02};
     QByteArray data = QByteArray::fromRawData(arr, sizeof(arr));
     udp->writeDatagram(data, QHostAddress("127.0.0.1"), 4004);
     ui->widgetControl->setVisible(false);
 }
-
-
 

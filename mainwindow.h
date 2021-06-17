@@ -44,6 +44,12 @@ private slots:
 
     void on_pbAlrm_clicked();
 
+    void on_pbProg_clicked();
+
+    void on_pushButton_3_clicked();
+
+    void on_pbRecord_clicked();
+
 private:
     Ui::MainWindow *ui;
     Radio *radio;
@@ -57,6 +63,8 @@ private:
     void fill_table();
     quint32 check_id(QVector<Radio*>, quint32);
     void fill_shops(Radio*, quint32);
+    void setFieldsValidation();
+    void fill_program_packet(QByteArray&);
     QSqlQuery *query;
     QSqlDatabase *db;
 };

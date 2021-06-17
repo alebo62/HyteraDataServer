@@ -83,13 +83,12 @@ void MainWindow::on_pbControlDel_clicked()
     fill_table();
 }
 
-
+// открыть  виджет регистрации и тревог
 void MainWindow::on_pbRegistration_clicked()
 {
     ui->widgetRegistration->setVisible(true);
-
 }
-
+// закрыть виджет регистрации и тревог
 void MainWindow::on_pbRegExit_clicked()
 {
     ui->widgetRegistration->setVisible(false);
@@ -99,7 +98,12 @@ void MainWindow::on_pbRegExit_clicked()
 // Открыть таблицу регистрации
 void MainWindow::on_pbReg_clicked()
 {
+    // готовим файл для чтения
+    fileReg.close();
+    fileReg.open(QIODevice::ReadOnly);
+
     ui->tableWidgetRegAlrm->clear();
+    ui->tableWidgetRegAlrm->setHorizontalHeaderLabels(QStringList() << "Дата" << "ИД радиост-ции" << "Владелец" << " Цех ");
     QByteArray ba;
     quint32 rc = 1;// начальная строка
     while(!fileReg.atEnd())//заносим из файла все радио в таблицу
@@ -123,12 +127,19 @@ void MainWindow::on_pbReg_clicked()
 
         rc++;
     }
+    // возвращаем файл в исходное
+    fileReg.close();
+    fileReg.open(QIODevice::Append);
 }
 
 // Открыть таблицу тревог
 void MainWindow::on_pbAlrm_clicked()
 {
+    fileAlrm.close();
+    fileAlrm.open(QIODevice::ReadOnly);
+
     ui->tableWidgetRegAlrm->clear();
+
     QByteArray ba;
     quint32 rc = 1;// начальная строка
     while(!fileAlrm.atEnd())//заносим из файла все радио в таблицу
@@ -152,7 +163,39 @@ void MainWindow::on_pbAlrm_clicked()
 
         rc++;
     }
+    fileAlrm.close();
+    fileAlrm.open(QIODevice::Append);
 }
+
+// Открываем виджет програмирования
+void MainWindow::on_pbProg_clicked()
+{
+    ui->widgetProg->setVisible(true);
+    ui->comboBoxRadio->clear();
+    // Наполняем комбоБокс
+    QStringList lst;
+    foreach(Radio* r, v_rad)
+      lst.append(QString::number(r->m_radioNum));
+    ui->comboBoxRadio->addItems(lst);
+}
+
+// Закрываем виджет программирования
+void MainWindow::on_pushButton_3_clicked()
+{
+    ui->widgetProg->setVisible(false);
+}
+
+// Запись данных в радио, Цифровой формат qint16
+void MainWindow::on_pbRecord_clicked()
+{
+    QByteArray ba;
+
+    // заполняем поля пакета для программирования радио
+    fill_program_packet(ba);
+
+    qDebug() << ba;
+}
+
 
 
 
