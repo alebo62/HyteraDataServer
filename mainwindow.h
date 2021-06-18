@@ -9,6 +9,8 @@
 #include <QLayout>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQuery>
+#include <QInputDialog>
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -54,18 +56,18 @@ private:
     Ui::MainWindow *ui;
     Radio *radio;
     QVector <Radio *> v_rad;
-    quint32 radCnt;
     QVector<quint32> v_radNums;
     QUdpSocket* udp;
     QFile file;
     QFile fileReg;
     QFile fileAlrm;
+    QSqlQuery *query;
+    QSqlDatabase *db;
     void fill_table();
-    quint32 check_id(QVector<Radio*>, quint32);
     void fill_shops(Radio*, quint32);
     void setFieldsValidation();
     void fill_program_packet(QByteArray&);
-    QSqlQuery *query;
-    QSqlDatabase *db;
+    quint32 check_id(QVector<Radio*>, quint32);
+    quint32 radCnt;
 };
 #endif // MAINWINDOW_H
